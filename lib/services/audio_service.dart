@@ -3,13 +3,6 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:uplink/state/call_bloc.dart';
 
 class AudioService {
-  static final AudioService _instance = AudioService._internal();
-
-  factory AudioService() {
-    return _instance;
-  }
-
-  AudioService._internal();
 
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
