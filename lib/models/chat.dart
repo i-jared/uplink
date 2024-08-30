@@ -19,10 +19,19 @@ class Chat {
 
   factory Chat.fromMap(Map<String, dynamic> map) {
     return Chat(
-      entries: map['entries'].map((entry) => ChatEntry.fromMap(entry)).toList(),
+      entries: map['entries'].map<ChatEntry>((entry) => ChatEntry.fromMap(entry)).toList(),
       id: map['chatId'],
       modelApiId: map['modelApiId'],
       timestamp: map['timestamp'],
+    );
+  }
+
+  Chat copyWith({List<ChatEntry>? entries, String? id, String? modelApiId, int? timestamp}) {
+    return Chat(
+      entries: entries ?? this.entries,
+      id: id ?? this.id,
+      modelApiId: modelApiId ?? this.modelApiId,
+      timestamp: timestamp ?? this.timestamp,
     );
   }
 }

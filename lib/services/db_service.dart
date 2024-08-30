@@ -21,6 +21,7 @@ class DbService {
   }
 
   static Future<List<ModelApi>> getAllApis() async {
+    // await _nuke();
     String? jsonString = await _storage.read(key: _apiStorageKey);
     if (jsonString == null) return [];
     List<dynamic> jsonList = jsonDecode(jsonString);

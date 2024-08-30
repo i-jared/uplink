@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uplink/models/chat_entry.dart';
 import 'package:uplink/state/call_bloc.dart';
 
@@ -14,7 +14,6 @@ class CallScreen extends StatefulWidget {
 
 class _CallScreenState extends State<CallScreen>
     with SingleTickerProviderStateMixin {
-  List<ChatEntry> chatEntries = [];
   final ScrollController _scrollController = ScrollController();
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -41,13 +40,13 @@ class _CallScreenState extends State<CallScreen>
   String getLoadingText() {
     double value = _animation.value;
     if (value < 0.25) {
-      return 'AI: ';
+      return '';
     } else if (value < 0.5) {
-      return 'AI: .';
+      return '.';
     } else if (value < 0.75) {
-      return 'AI: ..';
+      return '..';
     } else {
-      return 'AI: ...';
+      return '...';
     }
   }
 
@@ -55,10 +54,10 @@ class _CallScreenState extends State<CallScreen>
     final chatBloc = context.read<CallBloc>();
     final chatState = chatBloc.state;
     if (!chatState.isRecording) {
-      chatBloc.add(StartRecordingEvent());
+      chatBloc.add(InitiateRecordingEvent());
       _scrollToBottom();
     } else {
-      chatBloc.add(StartRecordingEvent());
+      chatBloc.add(StopRecordingEvent());
     }
   }
 
@@ -74,6 +73,7 @@ class _CallScreenState extends State<CallScreen>
   Widget build(BuildContext context) {
     final callBloc = context.watch<CallBloc>();
     final callState = callBloc.state;
+    final chatEntries = callState.chatEntries;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.callerName),
@@ -81,17 +81,41 @@ class _CallScreenState extends State<CallScreen>
       ),
       body: Column(
         children: [
+          BlocListener<CallBloc, CallState>(
+            listener: (context, state) {
+              if (state is ErrorState) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.error)),
+                );
+              } else if (state is EndCallState) {
+                Navigator.of(context).pop();
+              } else if (state is ResponseState) {
+                _scrollToBottom();
+              }
+            },
+            child: const SizedBox.shrink(),
+          ),
           Expanded(
             flex: 7,
             child: ListView.builder(
+              padding: const EdgeInsets.only(
+                  bottom: 100, top: 16, left: 16, right: 16),
               controller: _scrollController,
               itemCount: chatEntries.length,
               itemBuilder: (context, index) {
                 final entry = chatEntries[index];
+                final label = entry.type == ChatEntryType.transcription
+                    ? "You: "
+                    : "AI: ";
+                final trailing =
+                    (callState.isRecording || callState.isResponding) &&
+                            index == chatEntries.length - 1
+                        ? getLoadingText()
+                        : '';
                 return Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    '${entry.type == ChatEntryType.transcription ? "You: " : "AI: "}${entry.content}${callState.isRecording || callState.isResponding ? getLoadingText() : ''}',
+                    '$label${entry.content}$trailing',
                     style: TextStyle(
                       fontWeight: entry.type == ChatEntryType.transcription
                           ? FontWeight.bold
@@ -121,7 +145,7 @@ class _CallScreenState extends State<CallScreen>
                     icon: Icon(callState.isPaused
                         ? Icons.play_arrow_rounded
                         : Icons.pause_rounded),
-                    onPressed: () => callBloc.add(TogglePauseEvent()),
+                    onPressed: () => callBloc.add(StartLoadingEvent()),
                     iconSize: 48,
                   ),
                   IconButton(
@@ -138,8 +162,13 @@ class _CallScreenState extends State<CallScreen>
       ),
       floatingActionButton: FloatingActionButton.large(
         backgroundColor: callState.isRecording ? Colors.grey : Colors.red,
-        onPressed: _handleRecording,
-        child: Icon(callState.isRecording ? Icons.stop : Icons.fiber_manual_record),
+        onPressed: callState.isLoading || callState.isResponding
+            ? null
+            : _handleRecording,
+        child: callState.isLoading
+            ? const CircularProgressIndicator()
+            : Icon(
+                callState.isRecording ? Icons.stop : Icons.fiber_manual_record),
       ),
     );
   }
