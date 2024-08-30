@@ -16,15 +16,14 @@ class AudioService {
   bool? _available;
 
   Future<void> startTranscribing(CallBloc callBloc) async {
-    // if (_available == null) {
-    debugPrint('Starting to load');
+    debugPrint('Starting to load, ${_speech.isAvailable}');
     callBloc.add(StartLoadingEvent());
-    // }
     _available = await _speech.initialize(onStatus: (status) {
+      debugPrint('status: $status');
       if (status == 'listening') {
         debugPrint('starting to listen. stop loading');
-        callBloc.add(StopLoadingEvent());
         callBloc.add(StartRecordingEvent());
+        callBloc.add(StopLoadingEvent());
       } else if (status == 'done') {
         debugPrint('Done');
       }
@@ -33,6 +32,7 @@ class AudioService {
       callBloc.add(ErrorEvent(error: errorNotification.errorMsg));
     });
 
+    debugPrint('${_speech.isAvailable}, $_available');
     if (_available ?? false) {
       _isListening = true;
 
@@ -62,7 +62,7 @@ class AudioService {
   Future<void> stopTranscribing(CallBloc callBloc) async {
     if (_isListening) {
       await _speech.stop();
-      _isListening = false; 
+      _isListening = false;
     }
   }
 

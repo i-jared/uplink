@@ -51,6 +51,7 @@ class CallBloc extends Bloc<CallEvent, CallState> {
       // debugPrint(element?.toString());
     // });
     await flutterTts.setVoice({'name': 'Fred', 'locale': 'en-US'});
+    await flutterTts.setSpeechRate(0.5);
   }
 
   void _onError(ErrorEvent event, Emitter<CallState> emit) {

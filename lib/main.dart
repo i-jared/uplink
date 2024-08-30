@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uplink/screens/home.dart';
 import 'package:uplink/state/api_bloc.dart';
 import 'package:path_provider/path_provider.dart';
@@ -13,6 +14,8 @@ void main() async {
 
   final dir = await getApplicationDocumentsDirectory();
   Hive.defaultDirectory = dir.path;
+  await dotenv.load(fileName: ".env");
+
   runApp(const MyApp());
 }
 
